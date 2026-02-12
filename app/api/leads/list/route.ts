@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const normalizeValuation = (valuation: any) => {
   if (!valuation) return null;
   return {
