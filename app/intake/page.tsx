@@ -8,16 +8,7 @@ export default function IntakePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mgmtMode, setMgmtMode] = useState<'self' | 'third_party'>('self');
-  const [mgmtPct, setMgmtPct] = useState('2');
-  const [mgmtTouched, setMgmtTouched] = useState(false);
-
-  const handleMgmtModeChange = (mode: 'self' | 'third_party') => {
-    setMgmtMode(mode);
-    if (!mgmtTouched) {
-      setMgmtPct(mode === 'self' ? '2' : '10');
-    }
-  };
+  const [includeBuyHold, setIncludeBuyHold] = useState(true);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,6 +76,10 @@ export default function IntakePage() {
               <label>
                 Baseline Market Value
                 <input type="number" name="baseline_market_value" required min="0" />
+              </label>
+              <label>
+                Square Feet
+                <input type="number" name="square_feet" min="0" />
               </label>
             </div>
 
@@ -175,49 +170,23 @@ export default function IntakePage() {
             </div>
             <div className="card" style={{ marginTop: 16 }}>
               <h3 className="section-title">Buy & Hold Rental</h3>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={includeBuyHold}
+                  onChange={(event) => setIncludeBuyHold(event.target.checked)}
+                />
+                Include rental assumptions for this deal
+              </label>
+              <input type="hidden" name="include_buy_hold" value={includeBuyHold ? 'yes' : 'no'} />
               <div className="grid grid-2">
                 <label>
-                  Management
-                  <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input
-                        type="radio"
-                        name="mgmt_mode"
-                        value="self"
-                        checked={mgmtMode === 'self'}
-                        onChange={() => handleMgmtModeChange('self')}
-                      />
-                      Self-managed
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input
-                        type="radio"
-                        name="mgmt_mode"
-                        value="third_party"
-                        checked={mgmtMode === 'third_party'}
-                        onChange={() => handleMgmtModeChange('third_party')}
-                      />
-                      Third-party PM
-                    </label>
-                  </div>
+                  Current Rent ($/mo)
+                  <input type="number" name="current_rent" min="0" step="1" disabled={!includeBuyHold} />
                 </label>
                 <label>
-                  Management Fee (%)
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="number"
-                      name="mgmt_pct"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={mgmtPct}
-                      onChange={(event) => {
-                        setMgmtTouched(true);
-                        setMgmtPct(event.target.value);
-                      }}
-                    />
-                    <span className="muted">%</span>
-                  </div>
+                  Market Rent ($/mo)
+                  <input type="number" name="market_rent" min="0" step="1" disabled={!includeBuyHold} />
                 </label>
               </div>
             </div>

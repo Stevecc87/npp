@@ -36,6 +36,7 @@ export type IntakeAnswers = {
   kitchen_baths: string;
   roof_age: number | null;
   hvac_age: number | null;
+  square_feet: number | null;
   electrical: ElectricalCondition;
   plumbing: PlumbingCondition;
   foundation: FoundationCondition;
@@ -66,16 +67,14 @@ export type PhotoAnalysis = {
   id: string;
   created_at: string;
   condition_score: number;
-  update_level: string;
   rehab_tier: string;
   confidence: number;
+  update_level: string;
   flags: Record<string, unknown>;
   observations: string[];
 };
 
-export type MgmtMode = 'self' | 'third_party';
-
 export type RentalAssumptions = {
-  mgmt_mode: MgmtMode | null;
-  mgmt_pct: number | null;
+  current_rent: number | null;
+  market_rent: number | null;
 };

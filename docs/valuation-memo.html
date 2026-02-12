@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<h1 id="neoohio-underwriter-valuation-logic-memo-v1">NeoOhio Underwriter — Valuation Logic Memo (v1)</h1>
+<p><strong>Audience:</strong> Acquisitions / real-estate underwriting team<br />
+<strong>Purpose:</strong> Explain, at a practical level, how intake and photo analysis affect cash offer range.</p>
+<hr />
+<h2 id="how-valuation-is-produced-high-level">1) How valuation is produced (high level)</h2>
+<ol style="list-style-type: decimal">
+<li>Start from <strong>Baseline Market Value</strong> (input by user).</li>
+<li>Apply <strong>intake-based penalties</strong> (condition, occupancy, systems, etc.).</li>
+<li>Apply <strong>system repair deductions + haircuts</strong> (electrical/plumbing/foundation).</li>
+<li>Generate <strong>cash offer low/high</strong> from adjusted value.</li>
+<li>Apply <strong>photo-analysis adjustment</strong> (condition score + confidence).</li>
+</ol>
+<p>This is a transparent rule-based model (not a black-box AVM).</p>
+<hr />
+<h2 id="intake-parameters-and-directional-effect">2) Intake parameters and directional effect</h2>
+<h2 id="occupancy">Occupancy</h2>
+<ul>
+<li>Vacant: least friction (no extra occupancy penalty)</li>
+<li>Occupied: modest penalty</li>
+<li>Tenant-occupied: higher penalty</li>
+</ul>
+<p><strong>Reasoning:</strong> tenant/occupancy friction increases execution complexity and timeline risk.</p>
+<h2 id="timeline">Timeline</h2>
+<ul>
+<li>Immediate timeline improves pursue score</li>
+<li>Flexible timeline slightly reduces pursue score</li>
+</ul>
+<p><strong>Reasoning:</strong> timeline influences dealability more than intrinsic asset value.</p>
+<h2 id="motivation">Motivation</h2>
+<ul>
+<li>Higher seller motivation increases pursue score (and confidence)</li>
+<li>Lower motivation reduces pursue score</li>
+</ul>
+<p><strong>Reasoning:</strong> motivation changes conversion probability and negotiation leverage.</p>
+<h2 id="overall-condition">Overall Condition</h2>
+<ul>
+<li>Excellent → lowest condition penalty</li>
+<li>Good → moderate penalty</li>
+<li>Fair → larger penalty</li>
+<li>Poor → largest penalty</li>
+</ul>
+<p><strong>Reasoning:</strong> broad rehab burden and resale execution risk.</p>
+<h2 id="kitchen-bath">Kitchen &amp; Bath</h2>
+<ul>
+<li>Updated → lowest penalty</li>
+<li>Average → moderate penalty</li>
+<li>Dated → higher penalty</li>
+</ul>
+<p><strong>Reasoning:</strong> major buyer-perception and renovation-cost driver.</p>
+<h2 id="roof-age">Roof Age</h2>
+<ul>
+<li>Newer roof = lower penalty</li>
+<li>Older roof = higher penalty (especially older-lifecycle roofs)</li>
+</ul>
+<p><strong>Reasoning:</strong> near-term capex risk.</p>
+<h2 id="hvac-age">HVAC Age</h2>
+<ul>
+<li>Newer HVAC = lower penalty</li>
+<li>Older HVAC = higher penalty</li>
+</ul>
+<p><strong>Reasoning:</strong> replacement probability + operational risk.</p>
+<h2 id="electrical">Electrical</h2>
+<ul>
+<li>Better condition = lower repair reserve</li>
+<li>Outdated/major issues = higher reserve + haircut</li>
+</ul>
+<h2 id="plumbing">Plumbing</h2>
+<ul>
+<li>Better condition = lower repair reserve</li>
+<li>Outdated/major issues = higher reserve + haircut</li>
+</ul>
+<h2 id="foundation">Foundation</h2>
+<ul>
+<li>Solid/minor = smaller impact</li>
+<li>Structural/major = large negative impact</li>
+</ul>
+<p><strong>Reasoning (systems):</strong> direct repair dollars + risk discount.</p>
+<h2 id="water-issues">Water Issues</h2>
+<ul>
+<li>&quot;Yes&quot; meaningfully increases penalty</li>
+</ul>
+<p><strong>Reasoning:</strong> potential hidden damage/mold/remediation uncertainty.</p>
+<hr />
+<h2 id="math-summary-simplified">3) Math summary (simplified)</h2>
+<ul>
+<li><strong>Adjusted Value = Baseline Value × (1 − Total Penalty)</strong></li>
+<li>Then model computes a <strong>low/high target band</strong> off adjusted value</li>
+<li>Then subtracts system repair reserves and applies system haircuts</li>
+<li>Output: <strong>Cash Offer Low / Cash Offer High</strong></li>
+</ul>
+<p>Also produces: - <strong>Pursue Score</strong> (0–100) - <strong>Confidence</strong> (model confidence in estimate)</p>
+<hr />
+<h2 id="photo-analysis-impact">4) Photo analysis impact</h2>
+<p>Photo analysis returns: - Condition Score (0–100) - Confidence (0–1) - Update level / rehab tier - Observations + risk flags</p>
+<p>The system then applies a <strong>post-intake adjustment</strong> to offer range and pursue score: - Better visible condition + high confidence → upward adjustment - Weaker visible condition / risk flags → downward pressure</p>
+<hr />
+<h2 id="intake-vs-photos-precedence-policy">5) Intake vs photos: precedence policy</h2>
+<p>When photo confidence is high (<strong>&gt;= 0.75</strong>), photo evidence can override intake on: - Kitchen condition - Overall condition - Water issue indicator - System risk assumptions (major/minor)</p>
+<p>This prevents stale or optimistic call notes from overpowering strong visual evidence.</p>
+<hr />
+<h2 id="practical-interpretation-for-team-use">6) Practical interpretation for team use</h2>
+<ul>
+<li>Use model output as <strong>decision support</strong>, not blind autopilot.</li>
+<li>Trust increases when:</li>
+<li>intake is complete,</li>
+<li>photos are representative,</li>
+<li>confidence is high,</li>
+<li>overrides/notes are consistent with field reality.</li>
+<li>In edge cases, underwriter judgment remains final.</li>
+</ul>
+<hr />
+<h2 id="current-model-status">7) Current model status</h2>
+<ul>
+<li>Rule engine is transparent and auditable.</li>
+<li>Photo analysis is integrated with confidence-aware override logic.</li>
+<li>Output includes explanation bullets and observations for traceability.</li>
+</ul>
+</body>
+</html>

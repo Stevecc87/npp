@@ -23,6 +23,7 @@ create table if not exists intake_answers (
   kitchen_baths text not null,
   roof_age int,
   hvac_age int,
+  square_feet numeric,
   electrical text not null,
   plumbing text not null,
   foundation text not null,

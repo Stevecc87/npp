@@ -22,8 +22,12 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
     dated: 0.1
   };
 
-  penalty += conditionMap[answers.condition_overall] ?? 0.07;
-  penalty += kitchenMap[answers.kitchen_baths] ?? 0.05;
+  const sf = answers.square_feet ?? null;
+  const conditionSizeMultiplier =
+    sf === null ? 1 : sf >= 3000 ? 1.25 : sf >= 2000 ? 1.12 : sf <= 1200 ? 0.9 : 1;
+
+  penalty += (conditionMap[answers.condition_overall] ?? 0.07) * conditionSizeMultiplier;
+  penalty += (kitchenMap[answers.kitchen_baths] ?? 0.05) * conditionSizeMultiplier;
 
   if (answers.roof_age !== null) {
     if (answers.roof_age > 20) {
@@ -116,7 +120,7 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   }
 
   if (answers.water_issues === 'yes') {
-    penalty += 0.07;
+    penalty += 0.07 * conditionSizeMultiplier;
     penaltyFactors.push('Water intrusion risk noted.');
   }
 

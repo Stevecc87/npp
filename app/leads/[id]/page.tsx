@@ -12,6 +12,7 @@ type LeadDetail = {
   valuation: Valuation | null;
   photos: Photo[];
   photoAnalysis: PhotoAnalysis | null;
+  rental?: { current_rent: number | null; market_rent: number | null };
 };
 
 export default function LeadDetailPage() {
@@ -27,6 +28,8 @@ export default function LeadDetailPage() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [photoLoading, setPhotoLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [savingEdits, setSavingEdits] = useState(false);
 
   const load = async () => {
     try {
@@ -138,6 +141,34 @@ export default function LeadDetailPage() {
     }
   };
 
+  const saveEdits = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSavingEdits(true);
+    setActionError(null);
+    setStatusMessage(null);
+
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await response.text();
+      if (!response.ok) throw new Error(text || 'Failed to save changes');
+      setEditing(false);
+      await load();
+      setStatusMessage('Lead parameters updated. Valuation recalculated.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Save failed';
+      setActionError(message);
+    } finally {
+      setSavingEdits(false);
+    }
+  };
+
   if (loading) {
     return (
       <RequireAuth>
@@ -200,6 +231,95 @@ export default function LeadDetailPage() {
               </ul>
             </div>
           ) : null}
+        </div>
+
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 className="section-title" style={{ marginBottom: 0 }}>Edit Lead Inputs</h3>
+            <button className="button secondary" type="button" onClick={() => setEditing((v) => !v)}>
+              {editing ? 'Cancel' : 'Edit'}
+            </button>
+          </div>
+          {editing ? (
+            <form className="form" style={{ marginTop: 12 }} onSubmit={saveEdits}>
+              <div className="grid grid-2">
+                <label>Street<input name="street" defaultValue={lead.street} required /></label>
+                <label>City<input name="city" defaultValue={lead.city} required /></label>
+                <label>State<input name="state" defaultValue={lead.state} required /></label>
+                <label>Zip<input name="zip" defaultValue={lead.zip} required /></label>
+                <label>Seller Name<input name="seller_name" defaultValue={lead.seller_name ?? ''} /></label>
+                <label>Seller Phone<input name="seller_phone" defaultValue={lead.seller_phone ?? ''} /></label>
+                <label>Seller Email<input name="seller_email" defaultValue={lead.seller_email ?? ''} /></label>
+                <label>Baseline Market Value<input type="number" name="baseline_market_value" defaultValue={valuation?.baseline_market_value ?? 0} required min="0" /></label>
+                <label>Square Feet<input type="number" name="square_feet" defaultValue={intake.square_feet ?? ''} min="0" /></label>
+                <label>Occupancy
+                  <select name="occupancy" defaultValue={intake.occupancy}>
+                    <option value="occupied">Owner Occupied</option>
+                    <option value="vacant">Vacant</option>
+                    <option value="tenant">Tenant Occupied</option>
+                  </select>
+                </label>
+                <label>Timeline
+                  <select name="timeline" defaultValue={intake.timeline}>
+                    <option value="immediate">Immediate</option>
+                    <option value="soon">Soon</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                </label>
+                <label>Motivation
+                  <select name="motivation" defaultValue={intake.motivation}>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </label>
+                <label>Overall Condition
+                  <select name="condition_overall" defaultValue={intake.condition_overall}>
+                    <option value="excellent">Excellent</option>
+                    <option value="good">Good</option>
+                    <option value="fair">Fair</option>
+                    <option value="poor">Poor</option>
+                  </select>
+                </label>
+                <label>Kitchen & Baths
+                  <select name="kitchen_baths" defaultValue={intake.kitchen_baths}>
+                    <option value="updated">Updated</option>
+                    <option value="average">Average</option>
+                    <option value="dated">Dated</option>
+                  </select>
+                </label>
+                <label>Roof Age<input type="number" name="roof_age" defaultValue={intake.roof_age ?? ''} min="0" /></label>
+                <label>HVAC Age<input type="number" name="hvac_age" defaultValue={intake.hvac_age ?? ''} min="0" /></label>
+                <label>Electrical
+                  <select name="electrical" defaultValue={intake.electrical}>
+                    <option value="new">New</option><option value="serviceable">Serviceable</option><option value="outdated">Outdated</option><option value="major">Major</option>
+                  </select>
+                </label>
+                <label>Plumbing
+                  <select name="plumbing" defaultValue={intake.plumbing}>
+                    <option value="new">New</option><option value="serviceable">Serviceable</option><option value="outdated">Outdated</option><option value="major">Major</option>
+                  </select>
+                </label>
+                <label>Foundation
+                  <select name="foundation" defaultValue={intake.foundation}>
+                    <option value="solid">Solid</option><option value="minor">Minor</option><option value="structural">Structural</option><option value="major">Major</option>
+                  </select>
+                </label>
+                <label>Water Issues
+                  <select name="water_issues" defaultValue={intake.water_issues}>
+                    <option value="no">No</option><option value="yes">Yes</option>
+                  </select>
+                </label>
+                <label>Current Rent<input type="number" name="current_rent" min="0" defaultValue={detail.rental?.current_rent ?? ''} /></label>
+                <label>Market Rent<input type="number" name="market_rent" min="0" defaultValue={detail.rental?.market_rent ?? ''} /></label>
+              </div>
+              <label>Notes<textarea name="notes" defaultValue={intake.notes ?? ''} /></label>
+              <input type="hidden" name="include_buy_hold" value="yes" />
+              <button className="button" type="submit" disabled={savingEdits}>{savingEdits ? 'Saving...' : 'Save Changes'}</button>
+            </form>
+          ) : (
+            <p className="muted" style={{ marginTop: 8 }}>Use Edit to adjust parameters after submission.</p>
+          )}
         </div>
 
         <div className="card">

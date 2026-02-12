@@ -5,7 +5,6 @@ import {
   ElectricalCondition,
   FoundationCondition,
   IntakeAnswers,
-  MgmtMode,
   PlumbingCondition
 } from '@/lib/types';
 
@@ -65,14 +64,6 @@ export async function POST(request: Request) {
       return 'solid';
     };
 
-    const normalizeMgmtMode = (value: unknown): MgmtMode => {
-      const raw = String(value ?? 'self');
-      if (raw === 'third_party' || raw === 'self') {
-        return raw as MgmtMode;
-      }
-      return 'self';
-    };
-
     const answers: IntakeAnswers = {
       occupancy: String(body.occupancy ?? 'occupied'),
       timeline: String(body.timeline ?? 'soon'),
@@ -81,6 +72,7 @@ export async function POST(request: Request) {
       kitchen_baths: String(body.kitchen_baths ?? 'average'),
       roof_age: body.roof_age ? Number(body.roof_age) : null,
       hvac_age: body.hvac_age ? Number(body.hvac_age) : null,
+      square_feet: body.square_feet ? Number(body.square_feet) : null,
       electrical: normalizeElectrical(body.electrical),
       plumbing: normalizePlumbing(body.plumbing),
       foundation: normalizeFoundation(body.foundation),
@@ -94,27 +86,64 @@ export async function POST(request: Request) {
 
     if (intakeError) throw intakeError;
 
-    const mgmtMode = normalizeMgmtMode(body.mgmt_mode);
-    const mgmtPctRaw = body.mgmt_pct;
-    const mgmtPct =
-      mgmtPctRaw === null || mgmtPctRaw === undefined || String(mgmtPctRaw).trim() === ''
-        ? null
-        : Number(mgmtPctRaw);
+    const includeBuyHold = String(body.include_buy_hold ?? 'yes') === 'yes';
+    let currentRent: number | null = null;
+    let marketRent: number | null = null;
 
-    const { error: rentalError } = await supabase.from('rental_assumptions').insert({
-      lead_id: lead.id,
-      mgmt_mode: mgmtMode,
-      mgmt_pct: Number.isFinite(mgmtPct) ? mgmtPct : null
-    });
+    if (includeBuyHold) {
+      const currentRentRaw = body.current_rent;
+      const marketRentRaw = body.market_rent;
+      currentRent =
+        currentRentRaw === null || currentRentRaw === undefined || String(currentRentRaw).trim() === ''
+          ? null
+          : Number(currentRentRaw);
+      marketRent =
+        marketRentRaw === null || marketRentRaw === undefined || String(marketRentRaw).trim() === ''
+          ? null
+          : Number(marketRentRaw);
 
-    if (rentalError) throw rentalError;
+      const { error: rentalError } = await supabase.from('rental_assumptions').insert({
+        lead_id: lead.id,
+        current_rent: Number.isFinite(currentRent) ? currentRent : null,
+        market_rent: Number.isFinite(marketRent) ? marketRent : null
+      });
+
+      if (rentalError) throw rentalError;
+    }
 
     const baselineMarketValue = Number(body.baseline_market_value ?? 0);
     if (!baselineMarketValue || Number.isNaN(baselineMarketValue)) {
       return new NextResponse('Baseline market value is required', { status: 400 });
     }
 
-    const valuation = computeValuation({ baselineMarketValue, answers });
+    let valuation = computeValuation({ baselineMarketValue, answers });
+
+    if (
+      includeBuyHold &&
+      currentRent !== null &&
+      marketRent !== null &&
+      Number.isFinite(currentRent) &&
+      Number.isFinite(marketRent) &&
+      marketRent > 0
+    ) {
+      const rentGap = marketRent - currentRent;
+      const rentGapPct = Math.max(-0.4, Math.min(0.4, rentGap / marketRent));
+      const rentBumpPct = Math.max(-0.04, Math.min(0.04, rentGapPct * 0.1));
+
+      valuation = {
+        ...valuation,
+        cash_offer_low: Math.max(0, Math.round(valuation.cash_offer_low * (1 + rentBumpPct))),
+        cash_offer_high: Math.max(0, Math.round(valuation.cash_offer_high * (1 + rentBumpPct))),
+        pursue_score: Math.max(0, Math.min(100, valuation.pursue_score + Math.round(rentGapPct * 12))),
+        confidence: Number(Math.min(0.97, valuation.confidence + 0.02).toFixed(2)),
+        explanation_bullets: [
+          `Rent gap signal applied: current $${Math.round(currentRent).toLocaleString()}/mo vs market $${Math.round(
+            marketRent
+          ).toLocaleString()}/mo (${(rentGapPct * 100).toFixed(1)}% gap).`,
+          ...valuation.explanation_bullets
+        ]
+      };
+    }
 
     const { error: valuationError } = await supabase.from('valuations').insert({
       lead_id: lead.id,
