@@ -84,3 +84,18 @@ export async function GET(_request: Request, context: { params: { id: string } }
     return new NextResponse(message, { status: 500 });
   }
 }
+
+export async function DELETE(_request: Request, context: { params: { id: string } }) {
+  try {
+    const supabase = createSupabaseServerClient();
+    const leadId = context.params.id;
+
+    const { error } = await supabase.from('leads').delete().eq('id', leadId);
+    if (error) throw error;
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return new NextResponse(message, { status: 500 });
+  }
+}
