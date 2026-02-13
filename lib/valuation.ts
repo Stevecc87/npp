@@ -16,17 +16,17 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   };
 
   const kitchenMap: Record<string, number> = {
-    updated: 0.02,
-    average: 0.05,
-    dated: 0.09,
-    needs_replaced: 0.14
+    updated: 0.015,
+    average: 0.04,
+    dated: 0.07,
+    needs_replaced: 0.1
   };
 
   const bathroomMap: Record<string, number> = {
-    updated: 0.02,
-    average: 0.05,
-    dated: 0.09,
-    needs_replaced: 0.13
+    updated: 0.015,
+    average: 0.04,
+    dated: 0.07,
+    needs_replaced: 0.1
   };
 
   const roofMap: Record<string, number> = {
@@ -69,7 +69,7 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   const baths = answers.baths ?? 0;
   const bathCountPenalty =
     answers.bathrooms_condition === 'dated' || answers.bathrooms_condition === 'needs_replaced'
-      ? Math.min(0.06, baths * 0.01)
+      ? Math.min(0.03, baths * 0.005)
       : 0;
   penalty += bathCountPenalty;
 
