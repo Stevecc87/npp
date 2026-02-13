@@ -15,7 +15,9 @@ export async function POST(request: Request) {
       zip: String(body.zip ?? '').trim(),
       seller_name: body.seller_name ? String(body.seller_name).trim() : null,
       seller_phone: null,
-      seller_email: null
+      seller_email: null,
+      created_by_user_id: body.created_by_user_id ? String(body.created_by_user_id).trim() : null,
+      created_by_email: body.created_by_email ? String(body.created_by_email).trim().toLowerCase() : null
     };
 
     if (!leadPayload.street || !leadPayload.city || !leadPayload.zip) {
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
       square_feet: body.square_feet ? Number(body.square_feet) : null,
       electrical: String(body.electrical ?? 'updated') as IntakeAnswers['electrical'],
       foundation: String(body.foundation ?? 'good') as IntakeAnswers['foundation'],
+      rehab_price_model_tier: String(body.rehab_price_model_tier ?? 'full_rehab_interior_cosmetics') as IntakeAnswers['rehab_price_model_tier'],
       notes: body.notes ? String(body.notes) : null
     };
 
@@ -81,7 +84,8 @@ export async function POST(request: Request) {
       half_baths:
         answers.baths !== null && Math.abs(answers.baths - Math.floor(answers.baths) - 0.5) < 0.01 ? 1 : 0,
       beds: answers.beds,
-      baths: answers.baths
+      baths: answers.baths,
+      rehab_price_model_tier: answers.rehab_price_model_tier
     };
 
     const { error: intakeError } = await supabase.from('intake_answers').insert(legacyPayload);

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import RequireAuth from '@/components/RequireAuth';
-import { IntakeAnswers, Lead, Valuation } from '@/lib/types';
+import { IntakeAnswers, Lead, RehabPriceModelTier, Valuation } from '@/lib/types';
+import { computeSqftModelOffer } from '@/lib/valuation';
 
 type LeadDetail = {
   lead: Lead;
@@ -71,6 +72,18 @@ export default function LeadDetailPage() {
   if (!detail) return null;
 
   const { lead, intake, valuation } = detail;
+  const rehabTierLabels: Record<RehabPriceModelTier, string> = {
+    low_rehab_rental_almost: 'Low Rehab (rental almost)',
+    mid_rehab: 'Mid Rehab',
+    full_rehab_interior_cosmetics: 'Full Rehab (interior cosmetics)',
+    add_exterior_cosmetics: 'Add exterior cosmetics',
+    full_rehab_plus_big_ticket: 'Full rehab plus some big ticket items',
+    gut_job: 'Gut Job'
+  };
+  const selectedTier = (intake.rehab_price_model_tier ?? 'full_rehab_interior_cosmetics') as RehabPriceModelTier;
+  const sqftModel = valuation
+    ? computeSqftModelOffer(valuation.baseline_market_value, intake.square_feet, selectedTier)
+    : null;
 
   return (
     <RequireAuth>
@@ -82,11 +95,21 @@ export default function LeadDetailPage() {
             <div>
               <p className="muted">Seller</p>
               <strong>{lead.seller_name || 'Unknown'}</strong>
+              <div className="muted" style={{ marginTop: 4 }}>Created by: {lead.created_by_email || 'Unknown user'}</div>
             </div>
             {valuation ? (
               <div>
-                <p className="muted">Cash Offer Range</p>
+                <p className="muted">Cash Offer Range (Current Model)</p>
                 <div className="kpi">${valuation.cash_offer_low.toLocaleString()} - ${valuation.cash_offer_high.toLocaleString()}</div>
+                {sqftModel ? (
+                  <div style={{ marginTop: 10, border: '1px solid #2563eb', borderRadius: 10, background: '#eff6ff', padding: 10 }}>
+                    <p className="muted" style={{ marginTop: 0, color: '#1d4ed8' }}><strong>Cash Offer (ARV - Rehab $/SF Model)</strong></p>
+                    <div className="kpi" style={{ color: '#1d4ed8' }}>${sqftModel.offer.toLocaleString()}</div>
+                    <div className="muted" style={{ color: '#1d4ed8' }}>
+                      {rehabTierLabels[selectedTier]} @ ${sqftModel.ppsf}/sf × {Math.round(intake.square_feet ?? 0).toLocaleString()} sf = ${sqftModel.rehabCost.toLocaleString()} rehab allowance
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -126,8 +149,6 @@ export default function LeadDetailPage() {
                 <label>Bath<input type="number" name="baths" defaultValue={intake.baths ?? ''} min="0" step="0.5" /></label>
 
                 <label>Occupancy<select name="occupancy" defaultValue={intake.occupancy}><option value="occupied">Owner Occupied</option><option value="vacant">Vacant</option><option value="tenant">Tenant Occupied</option></select></label>
-                <label>Timeline<select name="timeline" defaultValue={intake.timeline}><option value="immediate">Immediate</option><option value="soon">Soon</option><option value="flexible">Flexible</option></select></label>
-                <label>Motivation<select name="motivation" defaultValue={intake.motivation}><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
                 <label>Overall Condition<select name="condition_overall" defaultValue={intake.condition_overall}><option value="fixer_upper">Fixer Upper</option><option value="dated">Dated</option><option value="standard">Standard</option><option value="high_end">High End</option></select></label>
                 <label>Kitchen<select name="kitchen_condition" defaultValue={intake.kitchen_condition}><option value="updated">Updated</option><option value="average">Average</option><option value="dated">Dated</option><option value="needs_replaced">Needs Replaced</option></select></label>
                 <label>Bathrooms<select name="bathrooms_condition" defaultValue={intake.bathrooms_condition}><option value="updated">Updated</option><option value="average">Average</option><option value="dated">Dated</option><option value="needs_replaced">Needs Replaced</option></select></label>
@@ -135,12 +156,23 @@ export default function LeadDetailPage() {
                 <label>Mechanicals<select name="mechanicals_condition" defaultValue={intake.mechanicals_condition}><option value="new">New</option><option value="average">Average</option><option value="older">Older</option><option value="needs_replaced">Needs Replaced</option></select></label>
                 <label>Electrical<select name="electrical" defaultValue={intake.electrical}><option value="updated">Updated</option><option value="fuse_knob_tube">Fuse/knob & tube</option><option value="major">Major</option></select></label>
                 <label>Foundation<select name="foundation" defaultValue={intake.foundation}><option value="good">Good</option><option value="minor">Minor</option><option value="major">Major</option></select></label>
-
-                <label>Current Rent<input type="number" name="current_rent" min="0" /></label>
-                <label>Market Rent<input type="number" name="market_rent" min="0" /></label>
+                <label style={{ border: '1px solid #2563eb', borderRadius: 8, padding: 10, background: '#eff6ff' }}>
+                  <strong style={{ color: '#1d4ed8' }}>Rehab Cost Model (Price/SF)</strong>
+                  <select name="rehab_price_model_tier" defaultValue={intake.rehab_price_model_tier ?? 'full_rehab_interior_cosmetics'}>
+                    <option value="low_rehab_rental_almost">Low Rehab (rental almost) — $15/sf</option>
+                    <option value="mid_rehab">Mid Rehab (cheaper materials, some salvageable) — $25/sf</option>
+                    <option value="full_rehab_interior_cosmetics">Full Rehab (interior cosmetics) — $35/sf</option>
+                    <option value="add_exterior_cosmetics">Add exterior cosmetics — $40/sf</option>
+                    <option value="full_rehab_plus_big_ticket">Full rehab plus some big ticket items — $45/sf</option>
+                    <option value="gut_job">Gut Job — $62/sf</option>
+                  </select>
+                </label>
               </div>
               <label>Notes<textarea name="notes" defaultValue={intake.notes ?? ''} /></label>
-              <input type="hidden" name="include_buy_hold" value="yes" />
+              <input type="hidden" name="include_buy_hold" value="no" />
+              <input type="hidden" name="timeline" value={intake.timeline} />
+              <input type="hidden" name="motivation" value={intake.motivation} />
+
               <button className="button" type="submit" disabled={savingEdits}>{savingEdits ? 'Saving...' : 'Save Changes'}</button>
             </form>
           ) : (
@@ -154,8 +186,6 @@ export default function LeadDetailPage() {
           <h3 className="section-title">Condition Snapshot</h3>
           <div className="grid grid-2">
             <div><p className="muted">Occupancy</p><strong>{intake.occupancy}</strong></div>
-            <div><p className="muted">Timeline</p><strong>{intake.timeline}</strong></div>
-            <div><p className="muted">Motivation</p><strong>{intake.motivation}</strong></div>
             <div><p className="muted">Overall Condition</p><strong>{intake.condition_overall}</strong></div>
             <div><p className="muted">Kitchen</p><strong>{intake.kitchen_condition}</strong></div>
             <div><p className="muted">Bathrooms</p><strong>{intake.bathrooms_condition}</strong></div>
@@ -166,6 +196,7 @@ export default function LeadDetailPage() {
             <div><p className="muted">Electrical</p><strong>{intake.electrical}</strong></div>
             <div><p className="muted">Foundation</p><strong>{intake.foundation}</strong></div>
             <div><p className="muted">Square Feet</p><strong>{intake.square_feet ?? 'Unknown'}</strong></div>
+            <div style={{ border: '1px solid #2563eb', borderRadius: 8, padding: 8, background: '#eff6ff' }}><p className="muted" style={{ color: '#1d4ed8' }}>Rehab Cost Model</p><strong style={{ color: '#1d4ed8' }}>{rehabTierLabels[selectedTier]}</strong></div>
           </div>
           {intake.notes ? <div style={{ marginTop: 12 }}><p className="muted">Notes</p><p>{intake.notes}</p></div> : null}
         </div>

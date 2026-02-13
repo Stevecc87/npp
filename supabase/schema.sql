@@ -9,7 +9,9 @@ create table if not exists leads (
   zip text not null,
   seller_name text,
   seller_phone text,
-  seller_email text
+  seller_email text,
+  created_by_user_id uuid,
+  created_by_email text
 );
 
 create table if not exists intake_answers (
@@ -28,6 +30,7 @@ create table if not exists intake_answers (
   plumbing text not null,
   foundation text not null,
   water_issues text not null,
+  rehab_price_model_tier text,
   notes text
 );
 

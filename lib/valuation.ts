@@ -1,9 +1,30 @@
-import { IntakeAnswers, Valuation } from '@/lib/types';
+import { IntakeAnswers, RehabPriceModelTier, Valuation } from '@/lib/types';
 
 type ComputeInput = {
   baselineMarketValue: number;
   answers: IntakeAnswers;
 };
+
+export const REHAB_PPSF_BY_TIER: Record<RehabPriceModelTier, number> = {
+  low_rehab_rental_almost: 15,
+  mid_rehab: 25,
+  full_rehab_interior_cosmetics: 35,
+  add_exterior_cosmetics: 40,
+  full_rehab_plus_big_ticket: 45,
+  gut_job: 62
+};
+
+export function computeSqftModelOffer(
+  arv: number,
+  squareFeet: number | null,
+  tier: RehabPriceModelTier
+): { ppsf: number; rehabCost: number; offer: number } {
+  const ppsf = REHAB_PPSF_BY_TIER[tier] ?? 35;
+  const sqft = squareFeet ?? 0;
+  const rehabCost = Math.max(0, Math.round(sqft * ppsf));
+  const offer = Math.max(0, Math.round(arv - rehabCost));
+  return { ppsf, rehabCost, offer };
+}
 
 export function computeValuation({ baselineMarketValue, answers }: ComputeInput) {
   let penalty = 0.08;
@@ -30,14 +51,14 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   };
 
   const roofMap: Record<string, number> = {
-    new: 0.01,
+    new: 0,
     average: 0.03,
     older: 0.06,
     needs_replaced: 0.1
   };
 
   const mechanicalsMap: Record<string, number> = {
-    new: 0.01,
+    new: 0,
     average: 0.03,
     older: 0.06,
     needs_replaced: 0.1
@@ -113,17 +134,26 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   const explanationBullets = [
     `Baseline value: $${Math.round(base).toLocaleString()}.`,
     sfExplanation,
-    `Timeline (${answers.timeline}): currently no direct price adjustment (tracked for workflow/testing only).`,
-    `Motivation (${answers.motivation}): currently no direct price adjustment (tracked for workflow/testing only).`,
     `Overall condition (${answers.condition_overall}): adds ${Math.round(sizedConditionPenalty * 100)}% penalty (about $${Math.round(base * sizedConditionPenalty).toLocaleString()}).`,
     `Kitchen (${answers.kitchen_condition}): adds ${Math.round(kitchenPenalty * 100)}% penalty (about $${Math.round(base * kitchenPenalty).toLocaleString()}).`,
     `Bathrooms (${answers.bathrooms_condition}): base ${Math.round(bathroomsBasePenalty * 100)}% penalty (about $${Math.round(base * bathroomsBasePenalty).toLocaleString()})${bathCountPenalty > 0 ? `, plus bath-count add-on ${Math.round(bathCountPenalty * 100)}% (about $${Math.round(base * bathCountPenalty).toLocaleString()}).` : '.'}`,
-    `Bed count (${answers.beds ?? 'unknown'}): currently no direct price adjustment.`,
-    `Bath count (${answers.baths ?? 'unknown'}): ${bathCountPenalty > 0 ? `adds ${Math.round(bathCountPenalty * 100)}% because bathroom condition is ${answers.bathrooms_condition}.` : 'no separate penalty unless bathrooms are dated/needs_replaced.'}`,
+    ...(bathCountPenalty > 0
+      ? [
+          `Bath count (${answers.baths ?? 'unknown'}): adds ${Math.round(bathCountPenalty * 100)}% because bathroom condition is ${answers.bathrooms_condition}.`
+        ]
+      : []),
     `Roof (${answers.roof_condition}): adds ${Math.round(roofPenalty * 100)}% penalty (about $${Math.round(base * roofPenalty).toLocaleString()}).`,
     `Mechanicals (${answers.mechanicals_condition}): adds ${Math.round(mechanicalsPenalty * 100)}% penalty (about $${Math.round(base * mechanicalsPenalty).toLocaleString()}).`,
-    `Electrical (${answers.electrical}): ${electricalAdj.pct === 0 && electricalAdj.repairs === 0 ? 'no extra adjustment.' : `spread haircut ${Math.round(electricalAdj.pct * 100)}% and repair reserve $${Math.round(electricalAdj.repairs).toLocaleString()}.`}`,
-    `Foundation (${answers.foundation}): ${foundationAdj.pct === 0 && foundationAdj.repairs === 0 ? 'no extra adjustment.' : `spread haircut ${Math.round(foundationAdj.pct * 100)}% and repair reserve $${Math.round(foundationAdj.repairs).toLocaleString()}.`}`,
+    ...(electricalAdj.pct === 0 && electricalAdj.repairs === 0
+      ? []
+      : [
+          `Electrical (${answers.electrical}): spread haircut ${Math.round(electricalAdj.pct * 100)}% and repair reserve $${Math.round(electricalAdj.repairs).toLocaleString()}.`
+        ]),
+    ...(foundationAdj.pct === 0 && foundationAdj.repairs === 0
+      ? []
+      : [
+          `Foundation (${answers.foundation}): spread haircut ${Math.round(foundationAdj.pct * 100)}% and repair reserve $${Math.round(foundationAdj.repairs).toLocaleString()}.`
+        ]),
     `Total condition/systems penalty before spread/repairs: ~${Math.round(penalty * 100)}%.`
   ];
 

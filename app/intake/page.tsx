@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RequireAuth from '@/components/RequireAuth';
+import { supabase } from '@/lib/supabase/client';
 
 export default function IntakePage() {
   const router = useRouter();
@@ -15,11 +16,17 @@ export default function IntakePage() {
     setLoading(true);
 
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
 
     const response = await fetch('/api/leads/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ...payload,
+        created_by_user_id: user?.id ?? null,
+        created_by_email: user?.email ?? null
+      })
     });
 
     if (!response.ok) {
@@ -58,22 +65,6 @@ export default function IntakePage() {
                   <option value="occupied">Owner Occupied</option>
                   <option value="vacant">Vacant</option>
                   <option value="tenant">Tenant Occupied</option>
-                </select>
-              </label>
-              <label>
-                Timeline
-                <select name="timeline" required>
-                  <option value="immediate">Immediate (0-30 days)</option>
-                  <option value="soon">Soon (30-90 days)</option>
-                  <option value="flexible">Flexible (90+ days)</option>
-                </select>
-              </label>
-              <label>
-                Motivation
-                <select name="motivation" required>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
                 </select>
               </label>
               <label>
@@ -137,7 +128,21 @@ export default function IntakePage() {
                   <option value="major">Major</option>
                 </select>
               </label>
+              <label style={{ border: '1px solid #2563eb', borderRadius: 8, padding: 10, background: '#eff6ff' }}>
+                <strong style={{ color: '#1d4ed8' }}>Rehab Cost Model (Price/SF)</strong>
+                <select name="rehab_price_model_tier" required defaultValue="full_rehab_interior_cosmetics">
+                  <option value="low_rehab_rental_almost">Low Rehab (rental almost) — $15/sf</option>
+                  <option value="mid_rehab">Mid Rehab (cheaper materials, some salvageable) — $25/sf</option>
+                  <option value="full_rehab_interior_cosmetics">Full Rehab (interior cosmetics) — $35/sf</option>
+                  <option value="add_exterior_cosmetics">Add exterior cosmetics — $40/sf</option>
+                  <option value="full_rehab_plus_big_ticket">Full rehab plus some big ticket items — $45/sf</option>
+                  <option value="gut_job">Gut Job — $62/sf</option>
+                </select>
+              </label>
             </div>
+            <input type="hidden" name="timeline" value="soon" />
+            <input type="hidden" name="motivation" value="medium" />
+
 
             <label>
               Notes

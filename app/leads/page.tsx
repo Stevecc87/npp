@@ -82,6 +82,7 @@ export default function LeadsPage() {
                         {lead.street}, {lead.city}, {lead.state} {lead.zip}
                       </strong>
                       <div className="muted">Seller: {lead.seller_name || 'Unknown'}</div>
+                      <div className="muted">Created by: {lead.created_by_email || 'Unknown user'}</div>
                     </div>
                   </Link>
                   <div style={{ textAlign: 'right' }}>
