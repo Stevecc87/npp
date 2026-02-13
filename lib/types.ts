@@ -10,37 +10,28 @@ export type Lead = {
   seller_email: string | null;
 };
 
-export type ElectricalCondition =
-  | 'new'
-  | 'modern'
-  | 'serviceable'
-  | 'outdated'
-  | 'major'
-  | 'ok'
-  | 'needs_work';
-export type PlumbingCondition =
-  | 'new'
-  | 'modern'
-  | 'serviceable'
-  | 'outdated'
-  | 'major'
-  | 'ok'
-  | 'needs_work';
-export type FoundationCondition = 'solid' | 'minor' | 'structural' | 'major' | 'ok' | 'needs_work';
+export type OverallCondition = 'fixer_upper' | 'dated' | 'standard' | 'high_end';
+export type KitchenCondition = 'updated' | 'average' | 'dated' | 'needs_replaced';
+export type BathroomsCondition = 'updated' | 'average' | 'dated' | 'needs_replaced';
+export type RoofCondition = 'new' | 'average' | 'older' | 'needs_replaced';
+export type MechanicalsCondition = 'new' | 'average' | 'older' | 'needs_replaced';
+export type ElectricalCondition = 'updated' | 'fuse_knob_tube' | 'major';
+export type FoundationCondition = 'good' | 'minor' | 'major';
 
 export type IntakeAnswers = {
   occupancy: string;
   timeline: string;
   motivation: string;
-  condition_overall: string;
-  kitchen_baths: string;
-  roof_age: number | null;
-  hvac_age: number | null;
+  condition_overall: OverallCondition;
+  kitchen_condition: KitchenCondition;
+  bathrooms_condition: BathroomsCondition;
+  beds: number | null;
+  baths: number | null;
+  roof_condition: RoofCondition;
+  mechanicals_condition: MechanicalsCondition;
   square_feet: number | null;
   electrical: ElectricalCondition;
-  plumbing: PlumbingCondition;
   foundation: FoundationCondition;
-  water_issues: string;
   notes: string | null;
 };
 
