@@ -87,7 +87,6 @@ export default function LeadsPage() {
                   <div style={{ textAlign: 'right' }}>
                     {valuation ? (
                       <>
-                        <div className="badge">Pursue {valuation.pursue_score}</div>
                         <div className="muted">
                           ${valuation.cash_offer_low.toLocaleString()} - ${valuation.cash_offer_high.toLocaleString()}
                         </div>
