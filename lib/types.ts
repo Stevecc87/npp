@@ -12,21 +12,13 @@ export type Lead = {
   created_by_email: string | null;
 };
 
-export type OverallCondition = 'fixer_upper' | 'dated' | 'standard' | 'high_end';
+export type OverallCondition = 'fixer_upper' | 'dated' | 'rent_ready' | 'standard' | 'high_end';
 export type KitchenCondition = 'updated' | 'average' | 'dated' | 'needs_replaced';
 export type BathroomsCondition = 'updated' | 'average' | 'dated' | 'needs_replaced';
 export type RoofCondition = 'new' | 'average' | 'older' | 'needs_replaced';
 export type MechanicalsCondition = 'new' | 'average' | 'older' | 'needs_replaced';
 export type ElectricalCondition = 'updated' | 'fuse_knob_tube' | 'major';
 export type FoundationCondition = 'good' | 'minor' | 'major';
-
-export type RehabPriceModelTier =
-  | 'low_rehab_rental_almost'
-  | 'mid_rehab'
-  | 'full_rehab_interior_cosmetics'
-  | 'add_exterior_cosmetics'
-  | 'full_rehab_plus_big_ticket'
-  | 'gut_job';
 
 export type IntakeAnswers = {
   occupancy: string;
@@ -42,7 +34,6 @@ export type IntakeAnswers = {
   square_feet: number | null;
   electrical: ElectricalCondition;
   foundation: FoundationCondition;
-  rehab_price_model_tier: RehabPriceModelTier;
   notes: string | null;
 };
 

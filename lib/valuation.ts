@@ -1,39 +1,20 @@
-import { IntakeAnswers, RehabPriceModelTier, Valuation } from '@/lib/types';
+import { IntakeAnswers, Valuation } from '@/lib/types';
 
 type ComputeInput = {
   baselineMarketValue: number;
   answers: IntakeAnswers;
 };
 
-export const REHAB_PPSF_BY_TIER: Record<RehabPriceModelTier, number> = {
-  low_rehab_rental_almost: 15,
-  mid_rehab: 25,
-  full_rehab_interior_cosmetics: 35,
-  add_exterior_cosmetics: 40,
-  full_rehab_plus_big_ticket: 45,
-  gut_job: 62
-};
-
-export function computeSqftModelOffer(
-  arv: number,
-  squareFeet: number | null,
-  tier: RehabPriceModelTier
-): { ppsf: number; rehabCost: number; offer: number } {
-  const ppsf = REHAB_PPSF_BY_TIER[tier] ?? 35;
-  const sqft = squareFeet ?? 0;
-  const rehabCost = Math.max(0, Math.round(sqft * ppsf));
-  const offer = Math.max(0, Math.round(arv - rehabCost));
-  return { ppsf, rehabCost, offer };
-}
 
 export function computeValuation({ baselineMarketValue, answers }: ComputeInput) {
   let penalty = 0.08;
 
   const conditionMap: Record<string, number> = {
     high_end: 0.02,
-    standard: 0.06,
-    dated: 0.12,
-    fixer_upper: 0.2
+    standard: 0.05,
+    rent_ready: 0.08,
+    dated: 0.11,
+    fixer_upper: 0.18
   };
 
   const kitchenMap: Record<string, number> = {
@@ -44,16 +25,16 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   };
 
   const bathroomMap: Record<string, number> = {
-    updated: 0.015,
-    average: 0.04,
-    dated: 0.07,
-    needs_replaced: 0.1
+    updated: 0.01,
+    average: 0.025,
+    dated: 0.045,
+    needs_replaced: 0.065
   };
 
   const roofMap: Record<string, number> = {
     new: 0,
-    average: 0.03,
-    older: 0.06,
+    average: 0.04,
+    older: 0.07,
     needs_replaced: 0.1
   };
 
@@ -90,7 +71,7 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   const baths = answers.baths ?? 0;
   const bathCountPenalty =
     answers.bathrooms_condition === 'dated' || answers.bathrooms_condition === 'needs_replaced'
-      ? Math.min(0.03, baths * 0.005)
+      ? Math.min(0.015, baths * 0.0025)
       : 0;
   penalty += bathCountPenalty;
 

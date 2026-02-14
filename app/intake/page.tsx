@@ -72,6 +72,7 @@ export default function IntakePage() {
                 <select name="condition_overall" required>
                   <option value="fixer_upper">Fixer Upper</option>
                   <option value="dated">Dated</option>
+                  <option value="rent_ready">Rent Ready</option>
                   <option value="standard">Standard</option>
                   <option value="high_end">High End</option>
                 </select>
@@ -126,17 +127,6 @@ export default function IntakePage() {
                   <option value="good">Good</option>
                   <option value="minor">Minor</option>
                   <option value="major">Major</option>
-                </select>
-              </label>
-              <label style={{ border: '1px solid #2563eb', borderRadius: 8, padding: 10, background: '#eff6ff' }}>
-                <strong style={{ color: '#1d4ed8' }}>Rehab Cost Model (Price/SF)</strong>
-                <select name="rehab_price_model_tier" required defaultValue="full_rehab_interior_cosmetics">
-                  <option value="low_rehab_rental_almost">Low Rehab (rental almost) — $15/sf</option>
-                  <option value="mid_rehab">Mid Rehab (cheaper materials, some salvageable) — $25/sf</option>
-                  <option value="full_rehab_interior_cosmetics">Full Rehab (interior cosmetics) — $35/sf</option>
-                  <option value="add_exterior_cosmetics">Add exterior cosmetics — $40/sf</option>
-                  <option value="full_rehab_plus_big_ticket">Full rehab plus some big ticket items — $45/sf</option>
-                  <option value="gut_job">Gut Job — $62/sf</option>
                 </select>
               </label>
             </div>

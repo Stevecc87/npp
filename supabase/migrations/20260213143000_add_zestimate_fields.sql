@@ -1,0 +1,1 @@
+-- Deprecated migration (no-op).
