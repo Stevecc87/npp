@@ -5,6 +5,29 @@ type ComputeInput = {
   answers: IntakeAnswers;
 };
 
+function getConditionSizeMultiplier(squareFeet: number | null): number {
+  if (squareFeet === null) return 1;
+
+  // Smooth piecewise interpolation to avoid hard jumps at threshold values.
+  if (squareFeet <= 950) {
+    // 0 sf -> 0.84x, 950 sf -> 0.90x
+    return 0.84 + (Math.max(0, squareFeet) / 950) * 0.06;
+  }
+
+  if (squareFeet <= 2200) {
+    // 950 sf -> 0.90x, 2200 sf -> 1.08x
+    return 0.9 + ((squareFeet - 950) / (2200 - 950)) * 0.18;
+  }
+
+  if (squareFeet <= 3000) {
+    // 2200 sf -> 1.08x, 3000 sf -> 1.14x
+    return 1.08 + ((squareFeet - 2200) / (3000 - 2200)) * 0.06;
+  }
+
+  // Gentle slope above 3000 sf, capped to avoid runaway effects.
+  const above = 1.14 + ((squareFeet - 3000) / 1000) * 0.02;
+  return Math.min(1.2, above);
+}
 
 export function computeValuation({ baselineMarketValue, answers }: ComputeInput) {
   let penalty = 0.08;
@@ -46,8 +69,7 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   };
 
   const sf = answers.square_feet ?? null;
-  const conditionSizeMultiplier =
-    sf === null ? 1 : sf >= 3000 ? 1.14 : sf >= 2200 ? 1.08 : sf <= 950 ? 0.9 : 1;
+  const conditionSizeMultiplier = getConditionSizeMultiplier(sf);
 
   const baseConditionPenalty = conditionMap[answers.condition_overall] ?? 0.08;
   const sizedConditionPenalty = baseConditionPenalty * conditionSizeMultiplier;
@@ -109,7 +131,7 @@ export function computeValuation({ baselineMarketValue, answers }: ComputeInput)
   const listingNetEstimate = Math.round(base * 0.93 - base * (penalty * 0.35));
 
   const sfExplanation = sf
-    ? `Square footage effect: ${Math.round(sf).toLocaleString()} sf is in the ${conditionSizeMultiplier.toFixed(2)}x band, so overall-condition penalty is ${Math.round(baseConditionPenalty * 100)}% → ${Math.round(sizedConditionPenalty * 100)}% (about $${Math.round(base * (sizedConditionPenalty - baseConditionPenalty)).toLocaleString()} additional value impact before spread/repairs).`
+    ? `Square footage effect: ${Math.round(sf).toLocaleString()} sf uses a ${conditionSizeMultiplier.toFixed(2)}x multiplier, so overall-condition penalty is ${(baseConditionPenalty * 100).toFixed(1)}% → ${(sizedConditionPenalty * 100).toFixed(1)}% (about $${Math.round(base * (sizedConditionPenalty - baseConditionPenalty)).toLocaleString()} additional value impact before spread/repairs).`
     : 'Square footage effect: not provided, so a neutral 1.00x multiplier is used for overall-condition penalty.';
 
   const explanationBullets = [
