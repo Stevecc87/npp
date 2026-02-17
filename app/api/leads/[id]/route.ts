@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { computeValuation } from '@/lib/valuation';
+import { purgeExpiredLeads } from '@/lib/leadRetention';
 import { IntakeAnswers } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,7 @@ const normalizePhotoAnalysis = (analysis: any) => {
 export async function GET(_request: Request, context: { params: { id: string } }) {
   try {
     const supabase = createSupabaseServerClient();
+    await purgeExpiredLeads(supabase);
     const leadId = context.params.id;
 
     const { data: lead, error: leadError } = await supabase.from('leads').select('*').eq('id', leadId).single();
@@ -75,6 +77,7 @@ export async function GET(_request: Request, context: { params: { id: string } }
 export async function PUT(request: Request, context: { params: { id: string } }) {
   try {
     const supabase = createSupabaseServerClient();
+    await purgeExpiredLeads(supabase);
     const leadId = context.params.id;
     const body = await request.json();
 
@@ -206,6 +209,7 @@ export async function PUT(request: Request, context: { params: { id: string } })
 export async function DELETE(_request: Request, context: { params: { id: string } }) {
   try {
     const supabase = createSupabaseServerClient();
+    await purgeExpiredLeads(supabase);
     const leadId = context.params.id;
     const { error } = await supabase.from('leads').delete().eq('id', leadId);
     if (error) throw error;

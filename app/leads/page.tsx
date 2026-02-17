@@ -61,6 +61,7 @@ export default function LeadsPage() {
             <div>
               <h2 className="section-title">Leads Dashboard</h2>
               <p className="muted">Track active calls and underwriting outputs.</p>
+              <p className="muted">Leads auto-delete 7 days after creation.</p>
             </div>
             <Link className="button" href="/intake">
               New Intake

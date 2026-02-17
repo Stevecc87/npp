@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { purgeExpiredLeads } from '@/lib/leadRetention';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,6 +24,7 @@ const normalizeValuation = (valuation: any) => {
 export async function GET() {
   try {
     const supabase = createSupabaseServerClient();
+    await purgeExpiredLeads(supabase);
 
     const { data: leads, error: leadsError } = await supabase
       .from('leads')

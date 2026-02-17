@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RequireAuth from '@/components/RequireAuth';
-import { supabase } from '@/lib/supabase/client';
 
 export default function IntakePage() {
   const router = useRouter();
@@ -16,16 +15,14 @@ export default function IntakePage() {
     setLoading(true);
 
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData.user;
 
     const response = await fetch('/api/leads/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...payload,
-        created_by_user_id: user?.id ?? null,
-        created_by_email: user?.email ?? null
+        created_by_user_id: null,
+        created_by_email: null
       })
     });
 

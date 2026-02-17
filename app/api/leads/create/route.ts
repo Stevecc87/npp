@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { computeValuation } from '@/lib/valuation';
+import { purgeExpiredLeads } from '@/lib/leadRetention';
 import { IntakeAnswers } from '@/lib/types';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const supabase = createSupabaseServerClient();
+    await purgeExpiredLeads(supabase);
 
     const leadPayload = {
       street: String(body.street ?? '').trim(),
